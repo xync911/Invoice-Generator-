@@ -80,6 +80,35 @@
     .btn-print:hover { background: var(--navy-light); }
     .btn-print:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
 
+    /* ── Mode Switcher ── */
+    .mode-switcher {
+      display: inline-flex;
+      background: #E5E7EB;
+      padding: 3px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all 0.15s;
+    }
+
+    .mode-btn.active {
+      background: var(--surface);
+      color: var(--navy);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
     /* ── Card ── */
     .card {
       background: var(--surface);
@@ -108,6 +137,8 @@
     }
 
     .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full-width { grid-column: 1 / -1; }
+
     .field label {
       font-size: 12px;
       font-weight: 600;
@@ -116,7 +147,7 @@
       letter-spacing: 0.4px;
     }
 
-    .field input {
+    .field input, .field textarea {
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 8px 10px;
@@ -128,13 +159,18 @@
       transition: border-color 0.15s;
     }
 
-    .field input:focus {
+    .field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .field input:focus, .field textarea:focus {
       outline: none;
       border-color: var(--navy);
       box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
     }
 
-    .field input::placeholder { color: var(--text-muted); }
+    .field input::placeholder, .field textarea::placeholder { color: var(--text-muted); }
 
     /* ── Table ── */
     .table-wrap { overflow-x: auto; }
@@ -261,7 +297,7 @@
       justify-content: flex-end;
     }
 
-    .totals-table { width: 320px; border-collapse: collapse; }
+    .totals-table { width: 340px; border-collapse: collapse; }
 
     .totals-table tr td { padding: 7px 0; }
     .totals-table tr td:first-child {
@@ -308,6 +344,25 @@
       color: var(--text-muted);
     }
 
+    .ongkir-input {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--surface);
+      width: 120px;
+      text-align: right;
+      transition: border-color 0.12s;
+    }
+
+    .ongkir-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
+    }
+
     .totals-divider { border: none; border-top: 2px solid var(--border); margin: 6px 0; }
 
     .totals-total td:first-child {
@@ -326,16 +381,17 @@
     @media print {
       body { background: #fff; padding: 0; font-size: 12px; }
       .page-header .btn-print,
+      .mode-switcher,
       .btn-tambah,
       .btn-hapus,
       .no-print { display: none !important; }
       .card { border: none; border-radius: 0; margin: 0; box-shadow: none; }
-      .card-head { display: none; }
-      .card-body { padding: 0; }
+      .card-head { font-size: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+      .card-body { padding: 10px 0 20px; }
       .wrapper { max-width: 100%; padding: 24px; }
       .td-input { border: none !important; background: transparent !important; box-shadow: none !important; padding-left: 0; }
-      .field input { border: none !important; background: transparent !important; box-shadow: none !important; padding-left: 0; }
-      .ppn-input { border: none !important; background: transparent !important; box-shadow: none !important; }
+      .field input, .field textarea { border: none !important; background: transparent !important; box-shadow: none !important; padding-left: 0; }
+      .ppn-input, .ongkir-input { border: none !important; background: transparent !important; box-shadow: none !important; }
       thead th { background: #f3f4f6; }
     }
 
@@ -357,7 +413,7 @@
 
   <!-- Header -->
   <div class="page-header">
-    <div class="page-title">Invoice Generator <span>Freelancer</span></div>
+    <div class="page-title">Invoice Generator <span id="label-subtipe">Jasa / Freelance</span></div>
     <button class="btn-print" onclick="window.print()" aria-label="Cetak invoice">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"/>
@@ -367,17 +423,23 @@
     </button>
   </div>
 
+  <!-- Switcher Mode -->
+  <div class="mode-switcher no-print">
+    <button type="button" class="mode-btn active" id="btn-mode-jasa" onclick="gantiMode('jasa')">Invoice Jasa / Freelance</button>
+    <button type="button" class="mode-btn" id="btn-mode-barang" onclick="gantiMode('barang')">Invoice Pengiriman Barang</button>
+  </div>
+
   <!-- Info Pihak -->
   <div class="card">
     <div class="card-head">Informasi Invoice</div>
     <div class="card-body">
       <div class="meta-grid">
         <div class="field">
-          <label for="nama-freelancer">Nama Freelancer</label>
-          <input type="text" id="nama-freelancer" placeholder="Nama lengkap kamu" />
+          <label for="nama-pengirim" id="label-pengirim">Nama Freelancer</label>
+          <input type="text" id="nama-pengirim" placeholder="Nama lengkap kamu" />
         </div>
         <div class="field">
-          <label for="nama-klien">Nama Klien</label>
+          <label for="nama-klien" id="label-penerima">Nama Klien</label>
           <input type="text" id="nama-klien" placeholder="Nama klien / perusahaan" />
         </div>
         <div class="field">
@@ -396,15 +458,36 @@
     </div>
   </div>
 
+  <!-- Detail Pengiriman (Khusus Mode Barang) -->
+  <div class="card" id="card-pengiriman" style="display: none;">
+    <div class="card-head">Detail Pengiriman Barang</div>
+    <div class="card-body">
+      <div class="meta-grid">
+        <div class="field full-width">
+          <label for="alamat-pengiriman">Alamat Lengkap Tujuan</label>
+          <textarea id="alamat-pengiriman" placeholder="Alamat penerima paket..."></textarea>
+        </div>
+        <div class="field">
+          <label for="kurir-ekspedisi">Ekspedisi / Kurir</label>
+          <input type="text" id="kurir-ekspedisi" placeholder="JNE / J&T / SiCepat dll." />
+        </div>
+        <div class="field">
+          <label for="nomor-resi">Nomor Resi / AWB</label>
+          <input type="text" id="nomor-resi" placeholder="Contoh: JP1234567890" />
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tabel Item -->
   <div class="card">
-    <div class="card-head">Rincian Pekerjaan</div>
+    <div class="card-head" id="label-rincian">Rincian Pekerjaan</div>
     <div class="card-body">
       <div class="table-wrap">
         <table id="tabel-item" aria-label="Daftar item invoice">
           <thead>
             <tr>
-              <th class="col-deskripsi">Deskripsi</th>
+              <th class="col-deskripsi" id="th-deskripsi">Deskripsi Pekerjaan</th>
               <th class="col-jumlah">Jumlah</th>
               <th class="col-harga">Harga Satuan</th>
               <th class="col-subtotal">Subtotal</th>
@@ -430,6 +513,12 @@
             <tr>
               <td>Subtotal</td>
               <td id="display-subtotal">Rp0</td>
+            </tr>
+            <tr id="row-ongkir" style="display: none;">
+              <td>Ongkos Kirim</td>
+              <td>
+                <input type="number" id="input-ongkir" class="ongkir-input" value="0" min="0" step="1000" placeholder="0" aria-label="Ongkos kirim" />
+              </td>
             </tr>
             <tr class="row-ppn-label">
               <td>
@@ -460,6 +549,9 @@
   (function () {
     'use strict';
 
+    /* ── State Mode ── */
+    var mode = 'jasa'; // 'jasa' atau 'barang'
+
     /* ── Format Rupiah ── */
     function rupiah(angka) {
       var n = Math.round(Number(angka) || 0);
@@ -488,7 +580,7 @@
         inpDesk.type = 'text';
         inpDesk.className = 'td-input';
         inpDesk.value = item.deskripsi;
-        inpDesk.placeholder = 'Nama pekerjaan / layanan';
+        inpDesk.placeholder = mode === 'barang' ? 'Nama barang / produk' : 'Nama pekerjaan / layanan';
         inpDesk.setAttribute('aria-label', 'Deskripsi item');
         inpDesk.addEventListener('input', function () {
           item.deskripsi = this.value;
@@ -575,9 +667,14 @@
         return acc + (item.jumlah || 0) * (item.harga || 0);
       }, 0);
 
+      var ongkir = 0;
+      if (mode === 'barang') {
+        ongkir = parseFloat(document.getElementById('input-ongkir').value) || 0;
+      }
+
       var persen = parseFloat(document.getElementById('input-ppn').value) || 0;
       var nilaiPpn = Math.round(subtotal * persen / 100);
-      var total = subtotal + nilaiPpn;
+      var total = subtotal + ongkir + nilaiPpn;
 
       document.getElementById('display-subtotal').textContent = rupiah(subtotal);
       document.getElementById('display-ppn').textContent = rupiah(nilaiPpn);
@@ -590,8 +687,47 @@
       renderSemua();
     }
 
+    /* ── Ganti Mode ── */
+    window.gantiMode = function (newMode) {
+      mode = newMode;
+      var btnJasa = document.getElementById('btn-mode-jasa');
+      var btnBarang = document.getElementById('btn-mode-barang');
+      var cardPengiriman = document.getElementById('card-pengiriman');
+      var rowOngkir = document.getElementById('row-ongkir');
+      var labelSubtipe = document.getElementById('label-subtipe');
+      var labelPengirim = document.getElementById('label-pengirim');
+      var labelPenerima = document.getElementById('label-penerima');
+      var labelRincian = document.getElementById('label-rincian');
+      var thDeskripsi = document.getElementById('th-deskripsi');
+
+      if (mode === 'barang') {
+        btnBarang.classList.add('active');
+        btnJasa.classList.remove('active');
+        cardPengiriman.style.display = 'block';
+        rowOngkir.style.display = 'table-row';
+        labelSubtipe.textContent = 'Kirim Barang';
+        labelPengirim.textContent = 'Nama Pengirim / Toko';
+        labelPenerima.textContent = 'Nama Penerima / Pembeli';
+        labelRincian.textContent = 'Rincian Barang';
+        thDeskripsi.textContent = 'Nama Barang / Produk';
+      } else {
+        btnJasa.classList.add('active');
+        btnBarang.classList.remove('active');
+        cardPengiriman.style.display = 'none';
+        rowOngkir.style.display = 'none';
+        labelSubtipe.textContent = 'Jasa / Freelance';
+        labelPengirim.textContent = 'Nama Freelancer';
+        labelPenerima.textContent = 'Nama Klien';
+        labelRincian.textContent = 'Rincian Pekerjaan';
+        thDeskripsi.textContent = 'Deskripsi Pekerjaan';
+      }
+
+      renderSemua();
+    };
+
     document.getElementById('btn-tambah-baris').addEventListener('click', tambahBaris);
     document.getElementById('input-ppn').addEventListener('input', hitungTotals);
+    document.getElementById('input-ongkir').addEventListener('input', hitungTotals);
 
     /* ── Inisialisasi: 3 baris kosong ── */
     tambahBaris();
