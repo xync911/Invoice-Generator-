@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1B2A4A;
+      --navy-light: #2C3E6B;
+      --accent: #1B2A4A;
+      --border: #D1D5DB;
+      --border-light: #E5E7EB;
+      --bg: #F9FAFB;
+      --surface: #FFFFFF;
+      --text: #111827;
+      --text-muted: #6B7280;
+      --danger: #DC2626;
+      --danger-bg: #FEF2F2;
+      --radius: 6px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 32px 16px 64px;
+    }
+
+    .wrapper {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.3px;
+    }
+
+    .page-title span {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-left: 8px;
+    }
+
+    .btn-print {
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      padding: 9px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font);
+      transition: background 0.15s;
+    }
+
+    .btn-print:hover { background: var(--navy-light); }
+    .btn-print:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+
+    .card-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-body { padding: 20px; }
+
+    /* ── Meta Grid ── */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .field input {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--surface);
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
+    }
+
+    .field input::placeholder { color: var(--text-muted); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    thead th.col-jumlah,
+    thead th.col-harga,
+    thead th.col-subtotal { text-align: right; }
+    thead th.col-hapus { text-align: center; }
+
+    tbody tr { border-bottom: 1px solid var(--border-light); }
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td { padding: 8px 12px; vertical-align: middle; }
+
+    tbody td.col-jumlah,
+    tbody td.col-harga,
+    tbody td.col-subtotal { text-align: right; }
+    tbody td.col-hapus { text-align: center; }
+
+    /* inline inputs inside table */
+    .td-input {
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 14px;
+      font-family: var(--font);
+      color: var(--text);
+      background: transparent;
+      width: 100%;
+      min-width: 80px;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .td-input:hover { border-color: var(--border); background: var(--bg); }
+    .td-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
+    }
+
+    .td-input.right { text-align: right; }
+
+    .col-deskripsi { min-width: 220px; }
+    .col-jumlah    { width: 90px; }
+    .col-harga     { width: 140px; }
+    .col-subtotal  { width: 140px; }
+    .col-hapus     { width: 48px; }
+
+    .subtotal-cell {
+      padding: 6px 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* delete button */
+    .btn-hapus {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-radius: 4px;
+      padding: 4px 6px;
+      display: inline-flex;
+      align-items: center;
+      transition: color 0.12s, background 0.12s;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .btn-hapus:hover { color: var(--danger); background: var(--danger-bg); }
+    .btn-hapus:focus-visible { outline: 3px solid var(--danger); outline-offset: 2px; }
+
+    /* add row button */
+    .btn-tambah {
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: var(--font);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .btn-tambah:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+      background: rgba(27,42,74,0.03);
+    }
+
+    .btn-tambah:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+
+    /* ── Totals ── */
+    .totals-block {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .totals-table { width: 320px; border-collapse: collapse; }
+
+    .totals-table tr td { padding: 7px 0; }
+    .totals-table tr td:first-child {
+      color: var(--text-muted);
+      font-size: 13px;
+      padding-right: 16px;
+    }
+    .totals-table tr td:last-child {
+      text-align: right;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .totals-table .row-ppn-label td:first-child { color: var(--text); }
+
+    .ppn-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .ppn-input {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--surface);
+      width: 64px;
+      text-align: right;
+      transition: border-color 0.12s;
+    }
+
+    .ppn-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
+    }
+
+    .ppn-symbol {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .totals-divider { border: none; border-top: 2px solid var(--border); margin: 6px 0; }
+
+    .totals-total td:first-child {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .totals-total td:last-child {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; padding: 0; font-size: 12px; }
+      .page-header .btn-print,
+      .btn-tambah,
+      .btn-hapus,
+      .no-print { display: none !important; }
+      .card { border: none; border-radius: 0; margin: 0; box-shadow: none; }
+      .card-head { display: none; }
+      .card-body { padding: 0; }
+      .wrapper { max-width: 100%; padding: 24px; }
+      .td-input { border: none !important; background: transparent !important; box-shadow: none !important; padding-left: 0; }
+      .field input { border: none !important; background: transparent !important; box-shadow: none !important; padding-left: 0; }
+      .ppn-input { border: none !important; background: transparent !important; box-shadow: none !important; }
+      thead th { background: #f3f4f6; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .page-header { flex-direction: column; align-items: flex-start; }
+      .meta-grid { grid-template-columns: 1fr 1fr; }
+      .totals-block { justify-content: stretch; }
+      .totals-table { width: 100%; }
+    }
+
+    @media (max-width: 420px) {
+      .meta-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-title">Invoice Generator <span>Freelancer</span></div>
+    <button class="btn-print" onclick="window.print()" aria-label="Cetak invoice">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Cetak / Simpan PDF
+    </button>
+  </div>
+
+  <!-- Info Pihak -->
+  <div class="card">
+    <div class="card-head">Informasi Invoice</div>
+    <div class="card-body">
+      <div class="meta-grid">
+        <div class="field">
+          <label for="nama-freelancer">Nama Freelancer</label>
+          <input type="text" id="nama-freelancer" placeholder="Nama lengkap kamu" />
+        </div>
+        <div class="field">
+          <label for="nama-klien">Nama Klien</label>
+          <input type="text" id="nama-klien" placeholder="Nama klien / perusahaan" />
+        </div>
+        <div class="field">
+          <label for="nomor-invoice">Nomor Invoice</label>
+          <input type="text" id="nomor-invoice" placeholder="INV-001" />
+        </div>
+        <div class="field">
+          <label for="tanggal-invoice">Tanggal Invoice</label>
+          <input type="date" id="tanggal-invoice" />
+        </div>
+        <div class="field">
+          <label for="tanggal-jatuh-tempo">Tanggal Jatuh Tempo</label>
+          <input type="date" id="tanggal-jatuh-tempo" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabel Item -->
+  <div class="card">
+    <div class="card-head">Rincian Pekerjaan</div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table id="tabel-item" aria-label="Daftar item invoice">
+          <thead>
+            <tr>
+              <th class="col-deskripsi">Deskripsi</th>
+              <th class="col-jumlah">Jumlah</th>
+              <th class="col-harga">Harga Satuan</th>
+              <th class="col-subtotal">Subtotal</th>
+              <th class="col-hapus no-print" aria-label="Hapus baris"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-item">
+            <!-- baris diisi JS -->
+          </tbody>
+        </table>
+      </div>
+      <button class="btn-tambah no-print" id="btn-tambah-baris" aria-label="Tambah baris item baru">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Tambah Baris
+      </button>
+
+      <!-- Totals -->
+      <div class="totals-block">
+        <table class="totals-table" aria-label="Ringkasan total">
+          <tbody>
+            <tr>
+              <td>Subtotal</td>
+              <td id="display-subtotal">Rp0</td>
+            </tr>
+            <tr class="row-ppn-label">
+              <td>
+                <div class="ppn-input-wrap">
+                  <label for="input-ppn" style="color:var(--text-muted);font-size:13px;">PPN</label>
+                  <input type="number" id="input-ppn" class="ppn-input" value="11" min="0" max="100" step="0.1" aria-label="PPN dalam persen" />
+                  <span class="ppn-symbol">%</span>
+                </div>
+              </td>
+              <td id="display-ppn">Rp0</td>
+            </tr>
+            <tr>
+              <td colspan="2"><hr class="totals-divider" /></td>
+            </tr>
+            <tr class="totals-total">
+              <td>Total Akhir</td>
+              <td id="display-total">Rp0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    'use strict';
+
+    /* ── Format Rupiah ── */
+    function rupiah(angka) {
+      var n = Math.round(Number(angka) || 0);
+      return 'Rp' + n.toLocaleString('id-ID');
+    }
+
+    /* ── State ── */
+    var items = [];
+    var idCounter = 0;
+
+    function buatItem() {
+      return { id: ++idCounter, deskripsi: '', jumlah: 1, harga: 0 };
+    }
+
+    /* ── Render ── */
+    function renderSemua() {
+      var tbody = document.getElementById('tbody-item');
+      tbody.innerHTML = '';
+      items.forEach(function (item) {
+        var tr = document.createElement('tr');
+
+        /* Deskripsi */
+        var tdDesk = document.createElement('td');
+        tdDesk.className = 'col-deskripsi';
+        var inpDesk = document.createElement('input');
+        inpDesk.type = 'text';
+        inpDesk.className = 'td-input';
+        inpDesk.value = item.deskripsi;
+        inpDesk.placeholder = 'Nama pekerjaan / layanan';
+        inpDesk.setAttribute('aria-label', 'Deskripsi item');
+        inpDesk.addEventListener('input', function () {
+          item.deskripsi = this.value;
+        });
+        tdDesk.appendChild(inpDesk);
+
+        /* Jumlah */
+        var tdJml = document.createElement('td');
+        tdJml.className = 'col-jumlah';
+        var inpJml = document.createElement('input');
+        inpJml.type = 'number';
+        inpJml.className = 'td-input right';
+        inpJml.value = item.jumlah;
+        inpJml.min = '0';
+        inpJml.step = '1';
+        inpJml.setAttribute('aria-label', 'Jumlah item');
+        inpJml.addEventListener('input', function () {
+          item.jumlah = parseFloat(this.value) || 0;
+          hitungSubtotalBaris(item, tr);
+          hitungTotals();
+        });
+        tdJml.appendChild(inpJml);
+
+        /* Harga Satuan */
+        var tdHarga = document.createElement('td');
+        tdHarga.className = 'col-harga';
+        var inpHarga = document.createElement('input');
+        inpHarga.type = 'number';
+        inpHarga.className = 'td-input right';
+        inpHarga.value = item.harga || '';
+        inpHarga.min = '0';
+        inpHarga.step = '1000';
+        inpHarga.placeholder = '0';
+        inpHarga.setAttribute('aria-label', 'Harga satuan');
+        inpHarga.addEventListener('input', function () {
+          item.harga = parseFloat(this.value) || 0;
+          hitungSubtotalBaris(item, tr);
+          hitungTotals();
+        });
+        tdHarga.appendChild(inpHarga);
+
+        /* Subtotal */
+        var tdSub = document.createElement('td');
+        tdSub.className = 'col-subtotal';
+        tdSub.setAttribute('data-id', item.id);
+        var spanSub = document.createElement('span');
+        spanSub.className = 'subtotal-cell';
+        spanSub.textContent = rupiah(item.jumlah * item.harga);
+        tdSub.appendChild(spanSub);
+
+        /* Hapus */
+        var tdHapus = document.createElement('td');
+        tdHapus.className = 'col-hapus no-print';
+        var btnHapus = document.createElement('button');
+        btnHapus.className = 'btn-hapus';
+        btnHapus.setAttribute('aria-label', 'Hapus baris ini');
+        btnHapus.innerHTML = '&times;';
+        btnHapus.addEventListener('click', function () {
+          items = items.filter(function (x) { return x.id !== item.id; });
+          if (items.length === 0) tambahBaris();
+          else { renderSemua(); hitungTotals(); }
+        });
+        tdHapus.appendChild(btnHapus);
+
+        tr.appendChild(tdDesk);
+        tr.appendChild(tdJml);
+        tr.appendChild(tdHarga);
+        tr.appendChild(tdSub);
+        tr.appendChild(tdHapus);
+        tbody.appendChild(tr);
+      });
+
+      hitungTotals();
+    }
+
+    function hitungSubtotalBaris(item, tr) {
+      var sub = (item.jumlah || 0) * (item.harga || 0);
+      var tdSub = tr.querySelector('[data-id="' + item.id + '"] span');
+      if (tdSub) tdSub.textContent = rupiah(sub);
+    }
+
+    function hitungTotals() {
+      var subtotal = items.reduce(function (acc, item) {
+        return acc + (item.jumlah || 0) * (item.harga || 0);
+      }, 0);
+
+      var persen = parseFloat(document.getElementById('input-ppn').value) || 0;
+      var nilaiPpn = Math.round(subtotal * persen / 100);
+      var total = subtotal + nilaiPpn;
+
+      document.getElementById('display-subtotal').textContent = rupiah(subtotal);
+      document.getElementById('display-ppn').textContent = rupiah(nilaiPpn);
+      document.getElementById('display-total').textContent = rupiah(total);
+    }
+
+    /* ── Tambah Baris ── */
+    function tambahBaris() {
+      items.push(buatItem());
+      renderSemua();
+    }
+
+    document.getElementById('btn-tambah-baris').addEventListener('click', tambahBaris);
+    document.getElementById('input-ppn').addEventListener('input', hitungTotals);
+
+    /* ── Inisialisasi: 3 baris kosong ── */
+    tambahBaris();
+    tambahBaris();
+    tambahBaris();
+
+    /* ── Tanggal default hari ini ── */
+    var today = new Date().toISOString().slice(0, 10);
+    document.getElementById('tanggal-invoice').value = today;
+
+    /* ── Nomor invoice default ── */
+    document.getElementById('nomor-invoice').value = 'INV-001';
+
+  }());
+</script>
+</body>
+</html>
