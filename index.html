@@ -339,6 +339,25 @@
       box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
     }
 
+    .totals-input {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--surface);
+      width: 120px;
+      text-align: right;
+      transition: border-color 0.12s;
+    }
+
+    .totals-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(27,42,74,0.1);
+    }
+
     .ppn-symbol {
       font-size: 13px;
       color: var(--text-muted);
@@ -512,7 +531,9 @@
           <tbody>
             <tr>
               <td>Subtotal</td>
-              <td id="display-subtotal">Rp0</td>
+              <td>
+                <input type="number" id="input-subtotal-manual" class="totals-input" placeholder="0" aria-label="Subtotal manual" />
+              </td>
             </tr>
             <tr id="row-ongkir" style="display: none;">
               <td>Ongkos Kirim</td>
@@ -663,9 +684,17 @@
     }
 
     function hitungTotals() {
-      var subtotal = items.reduce(function (acc, item) {
-        return acc + (item.jumlah || 0) * (item.harga || 0);
-      }, 0);
+      // Prioritas: input manual jika diisi, jika kosong pakai kalkulasi tabel
+      var inputManualVal = document.getElementById('input-subtotal-manual').value;
+      var subtotal = 0;
+      
+      if (inputManualVal !== '') {
+        subtotal = parseFloat(inputManualVal) || 0;
+      } else {
+        subtotal = items.reduce(function (acc, item) {
+          return acc + (item.jumlah || 0) * (item.harga || 0);
+        }, 0);
+      }
 
       var ongkir = 0;
       if (mode === 'barang') {
@@ -673,12 +702,19 @@
       }
 
       var persen = parseFloat(document.getElementById('input-ppn').value) || 0;
-      var nilaiPpn = Math.round(subtotal * persen / 100);
-      var total = subtotal + ongkir + nilaiPpn;
-
-      document.getElementById('display-subtotal').textContent = rupiah(subtotal);
-      document.getElementById('display-ppn').textContent = rupiah(nilaiPpn);
-      document.getElementById('display-total').textContent = rupiah(total);
+      var rowPpn = document.querySelector('.row-ppn-label');
+      
+      if (persen > 0) {
+        if (rowPpn) rowPpn.style.display = 'table-row';
+        var nilaiPpn = Math.round(subtotal * persen / 100);
+        var total = subtotal + ongkir + nilaiPpn;
+        document.getElementById('display-ppn').textContent = rupiah(nilaiPpn);
+        document.getElementById('display-total').textContent = rupiah(total);
+      } else {
+        if (rowPpn) rowPpn.style.display = 'none';
+        var total = subtotal + ongkir;
+        document.getElementById('display-total').textContent = rupiah(total);
+      }
     }
 
     /* ── Tambah Baris ── */
@@ -726,6 +762,7 @@
     };
 
     document.getElementById('btn-tambah-baris').addEventListener('click', tambahBaris);
+    document.getElementById('input-subtotal-manual').addEventListener('input', hitungTotals);
     document.getElementById('input-ppn').addEventListener('input', hitungTotals);
     document.getElementById('input-ongkir').addEventListener('input', hitungTotals);
 
